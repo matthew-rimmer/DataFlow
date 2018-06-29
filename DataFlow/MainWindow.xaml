@@ -1,0 +1,384 @@
+﻿<Window x:Class="DataFlow.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:mdi="clr-namespace:WPF.MDI;assembly=WPF.MDI"     
+        xmlns:src="clr-namespace:DataFlow"
+        mc:Ignorable="d"
+        Title="DataFlow" Height="649" Width="1262">
+
+    <DockPanel>
+
+
+        <mdi:MdiContainer Name="Container" Theme="Aero">
+
+            <mdi:MdiContainer.Menu>
+                <Menu DockPanel.Dock="Top">
+
+                    <MenuItem Header="File">
+                        <MenuItem Header="Export..." Click="MenuExport_Click">
+                        </MenuItem>
+                    </MenuItem>
+
+                    <MenuItem Header="Properties">
+                        <MenuItem Header="Line" Click="Properties_Click_Line"/>
+                        <MenuItem Header="Grid" Click="Properties_Click_Grid"/>
+                        <MenuItem Header="Uncertainties" Click="Properties_Click_Unc"></MenuItem>
+                    </MenuItem>
+
+
+                </Menu>
+            </mdi:MdiContainer.Menu>
+
+            <mdi:MdiChild Title="X/Y Data" 
+                          FontSize="16"
+                          Name="XYDataWindow"
+                          Position="0,0" 
+                          Height="600" Width="200"
+                          MaximizeBox="False"
+                          MinimizeBox="False"
+                          >
+
+                <DataGrid x:Name="XYDataGrid" 
+                            CanUserSortColumns="False" 
+                            CanUserReorderColumns="False"
+                            CanUserResizeColumns="False"
+                            CanUserResizeRows="False"
+                            ColumnWidth="*"
+                            ItemsSource="{Binding}"
+                            AutoGenerateColumns="False"
+                            CellEditEnding="XYDataGrid_CellEditEnding">
+
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="X" Binding="{Binding X, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <DataGridTextColumn Header="Y" Binding="{Binding Y, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+            </mdi:MdiChild>
+
+            <mdi:MdiChild Title="Uncertainty Data" 
+                          FontSize="16"
+                          x:Name="UncertaintyDatagridWindow"
+                          Position="200,0" 
+                          Height="600" Width="200"
+                          MaximizeBox="False"
+                          MinimizeBox="False"
+                          Visibility="Hidden">
+                <StackPanel>
+                    <DataGrid x:Name="UncertaintyDataGrid" 
+                            CanUserSortColumns="False" 
+                            CanUserReorderColumns="False"
+                            CanUserResizeColumns="False"
+                            CanUserResizeRows="False"
+                            ColumnWidth="*"
+                            ItemsSource="{Binding}"
+                            AutoGenerateColumns="False"
+                            CellEditEnding="XYDataGrid_CellEditEnding">
+
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="X-" Binding="{Binding XMinus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <DataGridTextColumn Header="X+" Binding="{Binding XPlus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <DataGridTextColumn Header="Y-" Binding="{Binding YMinus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <DataGridTextColumn Header="Y+" Binding="{Binding YPlus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </mdi:MdiChild>
+
+            <mdi:MdiChild Title="Uncertainty Data Indiv" 
+                          FontSize="16"
+                          x:Name="UncertaintyIndivWindow"
+                          Position="200,0" 
+                          Height="150" Width="200"
+                          MaximizeBox="False"
+                          MinimizeBox="False" 
+                          Resizable="False"
+                          Visibility="Hidden">
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Label Grid.Column="0" Grid.Row="0" Content="X+-" Grid.ColumnSpan="2"/>
+                    <TextBox x:Name="UncXTextBox" Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2"/>
+
+                    <Label Grid.Column="2" Grid.Row="0" Content="Y+-"/>
+                    <TextBox x:Name="UncYTextBox" Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="2"/>
+
+                    <Button x:Name="UncSingleButton" Content="Apply" Click="UncSingleButton_Click" Grid.Row="2" Grid.ColumnSpan="2"/>
+
+                </Grid>
+
+            </mdi:MdiChild>
+
+            <mdi:MdiChild Title="Uncertainty Data Perc" 
+                          FontSize="16"
+                          x:Name="UncertaintyPercWindow"
+                          Position="200,0" 
+                          Height="150" Width="200"
+                          MaximizeBox="False"
+                          MinimizeBox="False" 
+                          Resizable="False"
+                          Visibility="Hidden">
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Label Grid.Column="0" Grid.Row="0" Content="X%+-" Grid.ColumnSpan="2"/>
+                    <TextBox x:Name="UncPerXTextBox" Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2"/>
+
+                    <Label Grid.Column="2" Grid.Row="0" Content="Y%+-"/>
+                    <TextBox x:Name="UncPerYTextBox" Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="2"/>
+
+                    <Button x:Name="UncPercButton" Content="Apply" Click="UncPercButton_Click" Grid.Row="2" Grid.ColumnSpan="2"/>
+
+                </Grid>
+
+            </mdi:MdiChild>
+
+            <mdi:MdiChild Name="ChartWindow" 
+                          Title="Chart" 
+                          Position="400,0" 
+                          Height="600" Width="600" 
+                          SizeChanged="ChartWindow_SizeChanged" 
+                          MinHeight="200" 
+                          MinWidth="300"
+                          MinimizeBox="False">
+                <Canvas x:Name="FullCanvas">
+                    <StackPanel Orientation="Horizontal">
+                        <Border Padding="10" Margin="30,0,0,0">
+
+                            <TextBox AcceptsReturn="True" Text="Y" 
+                                 VerticalAlignment="Center" 
+                                 FontSize="18" 
+                                 MaxWidth="100" 
+                                 TextWrapping="Wrap"
+                                 BorderThickness="0"
+                                 Background="Transparent"/>
+
+                        </Border>
+
+                        <StackPanel>
+                            <Border BorderBrush="Black"
+                            Padding="30" Margin="30,0,0,0">
+
+                                <Canvas x:Name="BorderCanvas">
+                                    <Canvas x:Name ="ChartCanvas" 
+                                Background="White" 
+                                Height="400" 
+                                Width="400"
+                                ClipToBounds="True"
+                                SnapsToDevicePixels="False">
+
+
+                                    </Canvas>
+
+                                    <Canvas.LayoutTransform>
+                                        <ScaleTransform ScaleY="-1"/>
+                                    </Canvas.LayoutTransform>
+
+                                </Canvas>
+                            </Border>
+
+                            <TextBox AcceptsReturn="True" Text="X" 
+                                 HorizontalAlignment="Center" 
+                                 FontSize="18" 
+                                 TextWrapping="Wrap"
+                                 BorderThickness="0"
+                                 Background="Transparent"/>
+
+                        </StackPanel>
+                    </StackPanel>
+                </Canvas>
+            </mdi:MdiChild>
+
+            <mdi:MdiChild Title="Regression Line" 
+                          FontSize="16"
+                          Name="RegressionWindow"
+                          Position="1000,0" 
+                          Height="300" Width="250"
+                          MaximizeBox="False"
+                          MinimizeBox="False">
+                <StackPanel Orientation="Vertical">
+
+                    <TabControl Height="259" BorderBrush="{x:Null}" Foreground="{x:Null}" Background="{x:Null}">
+                        <TabItem Header="Linear">
+                            <Grid>
+                                <StackPanel Margin="0,0,0,-23" Grid.RowSpan="2">
+                                    <Button Content="Draw Straight Line regression" 
+                                        Click="RegressionButton_Click"/>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Gradient: "/>
+                                        <Label x:Name="GradientLabel"/>
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Y Intercept: "/>
+                                        <Label x:Name="YInterceptLabel"/>
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="X Intercept: "/>
+                                        <Label x:Name="XInterceptLabel"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                <Image Height="24" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="1" Width="127" Source="Icons/StraightEquation.png"/>
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="118*"/>
+                                    <RowDefinition Height="83*"/>
+                                </Grid.RowDefinitions>
+                            </Grid>
+                        </TabItem>
+                        <TabItem Header="Exponential">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+
+                                <Button Content="Draw Exponential Curve regression" 
+                                    Click="ExpRegressionButton_Click" Margin="0,5,0,10" Grid.ColumnSpan="2"/>
+
+                                <StackPanel Orientation="Horizontal" Grid.Row="1">
+                                    <Label Content="A: "/>
+                                    <Label x:Name="ExpALabel"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Grid.Row="2">
+                                    <Label Content="B: "/>
+                                    <Label x:Name="ExpBLabel"/>
+                                </StackPanel>
+
+                                <Image Source="Icons/ExpEquation.png" Margin="8,15,1,10" Grid.Row="1" Grid.Column="1" Grid.RowSpan="2"/>
+
+                                <Label Content="Number of &#xD;&#xA;Decay Lines:" Margin="0,1,0,40" Grid.Row="3" Grid.RowSpan="2" FontSize="11"/>
+                                <TextBox x:Name="DecayLinesTextbox" Margin="78,10,10,6" Grid.Row="3">
+                                    5
+                                </TextBox>
+
+                                <Button Content="Set Lines" Click="DecayLinesClick" Grid.Column="1" Margin="14,5,13,5" Grid.Row="3"/>
+
+                                <CheckBox x:Name="CapacitorCheckBox" Content="37%" HorizontalAlignment="Center" Checked="CapacitorCheckBox_Checked" Margin="33,10,27,6" Grid.Row="4" Width="50" Unchecked="CapacitorCheckBox_Unchecked" Grid.Column="1" />
+                                <CheckBox x:Name="HalfLifeCheckBox" Content="Half-lives" HorizontalAlignment="Center" Checked="HalfLifeCheckBox_Checked" Margin="10,10,10,6" Grid.Row="4" Width="90" Unchecked="HalfLifeCheckBox_Unchecked" />
+                            </Grid>
+                        </TabItem>
+                        <TabItem Header="Increasing to a point Exp.">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="58*"/>
+                                    <RowDefinition Height="31*"/>
+                                    <RowDefinition Height="31*"/>
+                                    <RowDefinition Height="40*"/>
+                                    <RowDefinition Height="41*"/>
+                                </Grid.RowDefinitions>
+
+                                <Button Content="Draw Increase to a point&#xD;&#xA;Exp. Curve" 
+                                    Click="ExpIncButton_Click" Margin="0,5,0,0" Grid.ColumnSpan="2"/>
+
+                                <StackPanel Orientation="Horizontal" Grid.Row="1">
+                                    <Label Content="A: "/>
+                                    <Label x:Name="ExpIncALabel"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Grid.Row="2">
+                                    <Label Content="B: "/>
+                                    <Label x:Name="ExpIncBLabel"/>
+                                </StackPanel>
+                                <CheckBox x:Name="Inc_CheckBox" Content="63%" HorizontalAlignment="Center" Checked="CapacitorCheckBox_Checked" Margin="29,11,28,8" Grid.Row="3" Width="53" Unchecked="CapacitorCheckBox_Unchecked" Grid.Column="1" />
+                                <Label Content="C:" HorizontalAlignment="Left" Margin="0,5,0,0" Grid.Row="3" VerticalAlignment="Top"/>
+                                <TextBox x:Name="IncC_Textbox" HorizontalAlignment="Left" Height="23" Margin="28,10,0,0" Grid.Row="3" TextWrapping="Wrap" VerticalAlignment="Top" Width="74"/>
+
+
+                                <Label Content="Number of &#xD;&#xA;Decay Lines:" Margin="0,1,0,0" Grid.Row="4" FontSize="11"/>
+                                <TextBox x:Name="DecayLinesTextboxInc" Margin="78,10,10,6" Grid.Row="4">
+                                    5
+                                </TextBox>
+
+                                <Button Content="Set Lines" Click="DecayLinesClickInc" Grid.Column="1" Margin="14,5,13,5" Grid.Row="4"/>
+                                <Image HorizontalAlignment="Left" Height="32" Margin="78,20,0,0" Grid.RowSpan="2" VerticalAlignment="Top" Width="137" Source="Icons/ExpIncEquation.png" Grid.Row="1" Grid.ColumnSpan="2"/>
+
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
+                </StackPanel>
+
+            </mdi:MdiChild>
+
+            <mdi:MdiChild Title="Graph Settings" 
+                          FontSize="16"
+                          Name="UncertaintyWindow"
+                          Position="1000,300" 
+                          Height="300" Width="250"
+                          MaximizeBox="False"
+                          MinimizeBox="False">
+
+                <StackPanel VerticalAlignment="Center">
+                    <Label Content="Graph Bounds:" HorizontalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBox x:Name="DomainMinBox" Width="50">
+                            0
+                        </TextBox>
+                        <Label Content="&#8804; x &#8804;"/>
+                        <TextBox x:Name="DomainMaxBox" Width="50">
+                            100
+                        </TextBox>
+                    </StackPanel>
+                    <Button Content="Set domain" Click="DomainClick" Width="100"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBox x:Name="RangeMinBox" Width="50">
+                            0
+                        </TextBox>
+                        <Label Content="&#8804; y &#8804;"/>
+                        <TextBox x:Name="RangeMaxBox" Width="50">
+                            100
+                        </TextBox>
+                    </StackPanel>
+                    <Button Content="Set Range" Click="RangeClick" Width="100"/>
+
+
+
+                </StackPanel>
+            </mdi:MdiChild>
+
+        </mdi:MdiContainer>
+    </DockPanel>
+</Window>

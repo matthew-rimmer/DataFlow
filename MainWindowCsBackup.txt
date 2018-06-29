@@ -1,0 +1,797 @@
+using System;
+using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Shapes;
+using System.Collections.ObjectModel;
+using System.IO;
+using DataFlow.GridDialog;
+using DataFlow.LineDialog;
+
+namespace DataFlow
+{
+    // Interaction logic for MainWindow.xaml
+    public partial class MainWindow : Window
+    {
+        #region Chart Declarations
+
+        
+       
+        private Line[] gridLinesVert = new Line[1000];
+
+        private Line[] gridLinesHoriz = new Line[1000];
+
+        private Label[] gridLabelVert = new Label[1000];
+
+        private Label[] gridLabelHoriz = new Label[1000];
+
+        public double totalLinesX = 10;
+        public double totalLinesY = 10;
+
+        public double maxBoundsX = 100;
+        public double minBoundsX = 0;
+
+        public double maxBoundsY = 100;
+        public double minBoundsY = 0;
+
+        public int minorLinesX = 5;
+        public int minorLinesY = 5;
+
+        private double MultiplierX;
+
+        private double MultiplierY;
+
+        private ObservableCollection<CustomPoint> coordinates = new ObservableCollection<CustomPoint>();
+
+        private Regression CurrentLine;
+
+        private bool MinorLines;
+
+        private ExponentialFit MyFit;
+
+        private bool HalfLivesOn;
+
+        #endregion
+
+        // MainWindow Constructor 
+        public MainWindow()
+        {
+            InitializeComponent();
+
+            // Sets the binding for the datagrid
+            this.DataContext = coordinates;
+
+            // Initialises the multipliers for drawing the chart/annotations
+            MultiplierX = ((int)ChartCanvas.Width / (int)maxBoundsX);
+            MultiplierY = ((int)ChartCanvas.Height / (int)maxBoundsY);
+
+            CurrentLine = Regression.None;
+            MinorLines = true;
+            HalfLivesOn = false;
+        }
+
+        #region Chart Re/Drawing of canvas
+
+        // Creates the grid lines
+        private void ChartCanvas_CreateChartGrid()
+        {
+            double lineX = 0;
+            double LabelintervalY = ((double)maxBoundsY - minBoundsY) / totalLinesY;
+            double LabelintervalX = ((double)maxBoundsX - minBoundsX) / totalLinesX;
+            int LineCounter = 0;
+
+            // Create a Black Brush
+            SolidColorBrush blackBrush = new SolidColorBrush();
+            blackBrush.Color = Colors.Black;
+
+            SolidColorBrush grayBrush = new SolidColorBrush();
+            grayBrush.Color = Colors.Gray;
+
+            SolidColorBrush lightGrayBrush = new SolidColorBrush();
+            lightGrayBrush.Color = Colors.Black;
+            int OriginLineVert = 0;
+
+            bool OriginLineVertThere = false;
+
+            // Creating Vertical Grid lines
+            for (int i = 0; lineX <= (ChartCanvas.Width); ++i)
+            {
+                
+                gridLinesVert[i] = new Line();
+                gridLinesVert[i].X1 = lineX;
+                gridLinesVert[i].Y1 = 0;
+                gridLinesVert[i].X2 = lineX;
+                gridLinesVert[i].Y2 = ChartCanvas.Height;
+
+                
+
+                // Set Line's width, color
+                gridLinesVert[i].Stroke = blackBrush;
+                bool OriginLine = false;
+
+
+                if (minBoundsX + (LabelintervalX * ((double)i / minorLinesX)) == 0.0)
+                {
+                    gridLinesVert[i].StrokeThickness = 2;
+                    gridLinesVert[i].Stroke = blackBrush;
+                    OriginLineVert = i;
+                    OriginLineVertThere = true;
+                    OriginLine = true;
+                }
+
+                if ((LineCounter % minorLinesX == 0) && OriginLine == false)
+                {
+                    gridLinesVert[i].Stroke = lightGrayBrush;
+                    ChartCanvas.Children.Add(gridLinesVert[i]);
+                }
+                else if(OriginLine == false)
+                {
+                    gridLinesVert[i].StrokeThickness = 1;
+                    gridLinesVert[i].Stroke = grayBrush;
+                    ChartCanvas.Children.Add(gridLinesVert[i]);
+                }
+
+
+
+
+                // Add line to the Grid.
+                lineX += ((ChartCanvas.Width) / totalLinesX) / minorLinesX;
+                LineCounter++;
+            }
+
+            double lineY = 0;
+
+            LineCounter = 0;
+
+            int OriginLineHoriz = 0;
+            bool OriginLineHorizThere = false;
+
+            // Creating Horizontal Grid lines
+            for (int i = 0; lineY <= ChartCanvas.Height; ++i)
+            {
+                gridLinesHoriz[i] = new Line();
+                gridLinesHoriz[i].X1 = 0;
+                gridLinesHoriz[i].Y1 = lineY;
+                gridLinesHoriz[i].X2 = ChartCanvas.Width;
+                gridLinesHoriz[i].Y2 = lineY;
+
+                // Set Line's width, color
+                gridLinesHoriz[i].Stroke = blackBrush;
+
+                bool OriginLine = false;
+
+                if (minBoundsY + (LabelintervalY * ((double)i / minorLinesY)) == 0)
+                {
+                    gridLinesHoriz[i].StrokeThickness = 2;
+                    gridLinesHoriz[i].Stroke = blackBrush;
+                    OriginLineHoriz = i;
+                    OriginLineHorizThere = true;
+                    OriginLine = true;
+                }
+
+                if ((LineCounter % minorLinesY == 0) && OriginLine == false)
+                {
+                    gridLinesHoriz[i].Stroke = lightGrayBrush;
+                    ChartCanvas.Children.Add(gridLinesHoriz[i]);
+                }
+                else if (OriginLine == false)
+                {
+                    gridLinesHoriz[i].StrokeThickness = 1;
+                    gridLinesHoriz[i].Stroke = grayBrush;
+                    ChartCanvas.Children.Add(gridLinesHoriz[i]);
+                }
+
+
+
+                // Add line to the Grid.
+                
+                lineY += ((ChartCanvas.Height) / totalLinesY) / minorLinesY;
+                LineCounter++;
+            }
+
+            if (OriginLineHorizThere)
+            {
+                ChartCanvas.Children.Add(gridLinesHoriz[OriginLineHoriz]);
+            }
+
+            if (OriginLineVertThere)
+            {
+                ChartCanvas.Children.Add(gridLinesVert[OriginLineVert]);
+            }
+
+            
+            
+
+            // Add Border lines
+
+            Rectangle BorderRectangle = new Rectangle()
+            {
+                Height = ChartCanvas.Height,
+                Width = ChartCanvas.Width,
+                Stroke = blackBrush,
+                StrokeThickness = 1
+            };
+
+
+            // Add lines to the Grid
+            ChartCanvas.Children.Add(BorderRectangle);
+
+
+            double interval = (ChartCanvas.Width) / totalLinesX;
+
+            double Currentinterval = -10;
+
+            ScaleTransform flipTrans = new ScaleTransform();
+
+            flipTrans.ScaleY = -1;
+
+            
+
+            // Create Vertical Labels 
+            for (int i = 0; Currentinterval < (ChartCanvas.Width); i++)
+            {
+
+                gridLabelVert[i] = new Label();
+
+                gridLabelVert[i].FontSize = 16;
+       
+                gridLabelVert[i].Content = minBoundsX + (LabelintervalX * i);
+
+
+                gridLabelVert[i].RenderTransformOrigin = new Point(0.5, 0.5);
+
+                gridLabelVert[i].Margin = new Thickness(Currentinterval, -35, 0, 0);
+
+
+                gridLabelVert[i].RenderTransform = flipTrans;
+
+
+                BorderCanvas.Children.Add(gridLabelVert[i]);
+
+                Currentinterval += interval;
+
+            }
+
+            interval = (ChartCanvas.Height) / totalLinesY;
+
+            Currentinterval = -15;
+
+            
+
+            // Create Horizontal Labels 
+            for (int i = 0; Currentinterval < (ChartCanvas.Height); i++)
+            {
+
+                gridLabelHoriz[i] = new Label();
+
+                gridLabelHoriz[i].FontSize = 16;
+
+                gridLabelHoriz[i].Content = minBoundsY + (LabelintervalY) * i;
+
+                gridLabelHoriz[i].RenderTransformOrigin = new Point(0.5, 0.5);
+
+                gridLabelHoriz[i].Margin = new Thickness(-40, Currentinterval, 0, 0);
+
+
+                gridLabelHoriz[i].RenderTransform = flipTrans;
+
+
+                BorderCanvas.Children.Add(gridLabelHoriz[i]);
+
+                Currentinterval += interval;
+
+            }
+
+        }
+
+
+        // Called when the canvas is resized
+        private void ChartCanvas_RedrawChart()
+        {
+            // Resize the chart with respect to the window size, so all the numbers are also displayed
+            ChartCanvas.Height = (ChartWindow.Height - 150);
+            ChartCanvas.Width = (ChartWindow.Width - 250);
+
+            BorderCanvas.Height = (ChartWindow.Height - 150);
+            BorderCanvas.Width = (ChartWindow.Width - 250);
+
+            MultiplierX = (ChartCanvas.Width / (maxBoundsX - minBoundsX));
+            MultiplierY = (ChartCanvas.Height / (maxBoundsY - minBoundsY));
+
+            // Clear + redraw canvas
+
+            for (int i = 0; i < 12; i++)
+            {
+                BorderCanvas.Children.Remove(gridLabelHoriz[i]);
+            }
+
+            for (int i = 0; i < 12; i++)
+            {
+                BorderCanvas.Children.Remove(gridLabelVert[i]);
+            }
+
+            ChartCanvas.Children.Clear();
+            ChartCanvas_CreateChartGrid();
+
+            if (CurrentLine == Regression.Straight)
+            {
+                DrawRegressionLine();
+            }
+
+            if (CurrentLine == Regression.Exp)
+            {
+                DrawExpCurve();
+            }
+
+            // Draw any points in the datagrid
+            for (int i = 0; i < coordinates.Count; i++)
+            {
+                PlotOnChart(coordinates[i].ToPoint());
+            }
+
+            //IMPLEMENT UNC
+            //
+            //
+            /*for (int i = 0; i < coordinates.Count; i++)
+            {
+                Uncertainties.Uncertainty Unc = new Uncertainties.Uncertainty(coordinates[i].ToPoint(), 10, 10, ChartCanvas, MultiplierX, MultiplierY, minBoundsX, minBoundsY);
+            }
+            */
+
+
+
+        }
+
+
+        #endregion
+
+        #region Annotations/Drawing on canvas
+
+        // Plots 2 lines on the charts as a cross at point in parameters
+        private void PlotOnChart(Point plotPoint)
+        {
+            Line PlotLine1 = new Line();
+            Line PlotLine2 = new Line();
+
+            PlotLine1.Stroke = new SolidColorBrush(Colors.Black);
+            PlotLine2.Stroke = new SolidColorBrush(Colors.Black);
+
+            double MultiplierX = (ChartCanvas.Width / (maxBoundsX - minBoundsX));
+            double MultiplierY = (ChartCanvas.Height / (maxBoundsY - minBoundsY));
+
+            double XCordOnChart = ((plotPoint.X - (minBoundsX)) * MultiplierX);
+
+            double YCordOnChart = ((plotPoint.Y - (minBoundsY)) * MultiplierY);
+
+            PlotLine1.X1 = XCordOnChart + 5;
+            PlotLine1.Y1 = YCordOnChart + 5;
+
+            PlotLine1.X2 = XCordOnChart - 5;
+            PlotLine1.Y2 = YCordOnChart - 5;
+
+
+            PlotLine2.X1 = XCordOnChart - 5;
+            PlotLine2.Y1 = YCordOnChart + 5;
+
+            PlotLine2.X2 = XCordOnChart + 5;
+            PlotLine2.Y2 = YCordOnChart - 5;
+
+            ChartCanvas.Children.Add(PlotLine1);
+            ChartCanvas.Children.Add(PlotLine2);
+        }
+
+        // When the user finishes editing a cell, this redraws the canvas grid and then draws the points in the datagrid
+        private void XYDataGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            ChartCanvas_RedrawChart();
+        }
+
+
+        // Draws a line of best fit (first order polynomial) on the chart for the data in coordinates
+        private void DrawRegressionLine()
+        {
+            CurrentLine = Regression.Straight;
+
+            List<Double> CoordsX = new List<Double>();
+            List<Double> CoordsY = new List<Double>();
+
+            for (int i = 0; i < coordinates.Count; i++)
+            {
+                CoordsX.Add(coordinates[i].X);
+            }
+
+            for (int i = 0; i < coordinates.Count; i++)
+            {
+                CoordsY.Add(coordinates[i].Y);
+            }
+
+            StraightFit RegressionLineValues = new StraightFit(CoordsX, CoordsY);
+
+            GradientLabel.Content = Math.Round(RegressionLineValues.gradient, 2);
+
+            YInterceptLabel.Content = Math.Round(RegressionLineValues.yIntercept, 2);
+
+            XInterceptLabel.Content = Math.Round(RegressionLineValues.GetXValue(0), 2);
+
+
+            Line RegressionLine = new Line()
+            {
+                X1 = ((coordinates[0].X - minBoundsX) * MultiplierX),
+                Y1 = ((RegressionLineValues.GetYValue(coordinates[0].X) - minBoundsY) * MultiplierY),
+
+                X2 = ((coordinates[coordinates.Count - 1].X - minBoundsX) * MultiplierX),
+
+                Y2 = ((RegressionLineValues.GetYValue(coordinates[coordinates.Count - 1].X) - minBoundsY) * MultiplierY),
+
+                Stroke = new SolidColorBrush(Colors.Red),
+
+                StrokeThickness = 2
+            };
+
+            ChartCanvas.Children.Add(RegressionLine);
+
+
+        }
+
+        private void DrawExpCurve()
+        {
+
+            CurrentLine = Regression.Exp;
+
+            List<Double> CoordsX = new List<Double>();
+            List<Double> CoordsY = new List<Double>();
+
+            for (int i = 0; i < coordinates.Count; i++)
+            {
+                CoordsX.Add(coordinates[i].X);
+            }
+
+            for (int i = 0; i < coordinates.Count; i++)
+            {
+                CoordsY.Add(coordinates[i].Y);
+            }
+
+            ExponentialFit ExpFit = new ExponentialFit(CoordsX, CoordsY);
+
+            double xinc = (double)((maxBoundsX - minBoundsX) / 200f);
+
+            for (double i = minBoundsX; i < 2000; i += xinc)
+            {
+                double MultiplierX = (ChartCanvas.Width / (maxBoundsX - minBoundsX));
+                double MultiplierY = (ChartCanvas.Height / (maxBoundsY - minBoundsY));
+
+                Line CurveLine = new Line();
+
+                  SolidColorBrush newBrush = new SolidColorBrush();
+                newBrush.Color = Colors.Red;
+
+                double x1 = (i);
+                double x2 = (i + xinc);
+
+                double y1 = ExpFit.A * Math.Exp(ExpFit.B * x1);
+                double y2 = ExpFit.A * Math.Exp(ExpFit.B * x2);
+
+
+                CurveLine.X1 = ((x1 - minBoundsX) * MultiplierX);
+                CurveLine.Y1 = ((y1 - minBoundsY) * MultiplierY);
+
+                CurveLine.X2 = ((x2 - minBoundsX) * MultiplierX);
+
+                CurveLine.Y2 = ((y2 - minBoundsY) * MultiplierY);
+
+                CurveLine.Stroke = newBrush;
+                CurveLine.StrokeThickness = 2;
+
+                ChartCanvas.Children.Add(CurveLine);
+
+            }
+
+            if (HalfLivesOn)
+            {
+                double currentHalfLifeX = 0;
+
+                for (int i = 0; i < 7; i++)
+                {
+                    currentHalfLifeX = ExpFit.HalfLife() * i;
+
+                    Line HalfLifeLineY = new Line()
+                    {
+                        X1 = (currentHalfLifeX - minBoundsX) * MultiplierX,
+                        Y1 = ExpFit.A * Math.Exp(ExpFit.B * (currentHalfLifeX) - minBoundsY) * MultiplierY,
+
+                        X2 = (currentHalfLifeX - minBoundsX) * MultiplierX,
+                        Y2 = ExpFit.A * (0 - minBoundsY) * MultiplierY,
+
+                        Stroke = new SolidColorBrush(Colors.Blue),
+                        StrokeThickness = 1.8,
+                        Opacity = 1,
+                        StrokeDashArray = new DoubleCollection() { 2 }
+                };
+
+                    Console.WriteLine(ExpFit.A * (0 - minBoundsY) * MultiplierY);
+                    Console.WriteLine((currentHalfLifeX - minBoundsX) * MultiplierX);
+
+                    Line HalfLifeLineX = new Line()
+                    {
+                        X1 = (currentHalfLifeX - minBoundsX) * MultiplierX,
+                        Y1 = ExpFit.A * Math.Exp(ExpFit.B * (currentHalfLifeX) - minBoundsY) * MultiplierY,
+
+                        X2 = 0,
+                        Y2 = ExpFit.A * Math.Exp(ExpFit.B * (currentHalfLifeX) - minBoundsY) * MultiplierY,
+
+                        Stroke = new SolidColorBrush(Colors.Blue),
+                        StrokeThickness = 1.8,
+                        Opacity = 1,
+                        StrokeDashArray = new DoubleCollection() { 2 }
+                    };
+
+
+                    ChartCanvas.Children.Add(HalfLifeLineY);
+                    ChartCanvas.Children.Add(HalfLifeLineX);
+
+                }
+
+            }
+
+            ExpALabel.Content = Math.Round(ExpFit.A, 2);
+
+            ExpBLabel.Content = Math.Round(ExpFit.B, 2);
+
+        }
+
+        #endregion
+
+        #region Saving/Opening Files
+
+        struct SavefileStruct
+        {
+            public ObservableCollection<CustomPoint> SaveCoordinates;
+            public Regression SaveLine;
+
+            public SavefileStruct(ObservableCollection<CustomPoint> CoordsIn, Regression LineIn)
+            {
+                this.SaveCoordinates = CoordsIn;
+                this.SaveLine = LineIn;
+            }
+
+        };
+
+        // Saves to a file 
+        private void SaveClick(object sender, RoutedEventArgs e)
+        {
+            Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
+            dlg.FileName = "untitled"; // Default file name
+            dlg.DefaultExt = ".GraphProject"; // Default file extension
+            dlg.Filter = "Dataflow Projects (.GraphProject)|*.GraphProject"; // Filter files by extension
+
+            // Show save file dialog box
+            Nullable<bool> result = dlg.ShowDialog();
+
+            // Process save file dialog box results
+            if (result == true)
+            {
+                // Save document
+                string fileName = dlg.FileName;
+
+                BinaryWriter binWriter = new BinaryWriter(File.Open(fileName, FileMode.Create));
+
+
+                binWriter.Close();
+            }
+        }
+
+        private void OpenClick(object sender, RoutedEventArgs e)
+        {
+            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+            dlg.FileName = "untitled"; // Default file name
+            dlg.DefaultExt = ".GraphProject"; // Default file extension
+            dlg.Filter = "Dataflow Projects (.GraphProject)|*.GraphProject"; // Filter files by extension
+
+            // Show open file dialog box
+            Nullable<bool> result = dlg.ShowDialog();
+
+            // Process open file dialog box results
+            if (result == true)
+            {
+                // Open document
+                string filename = dlg.FileName;
+            }
+        }
+
+        private void ImportClick(object sender, RoutedEventArgs e)
+        {
+            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+            dlg.Filter = "Microsoft Excel Files (.xlsx)|*.xlsx"; // Filter files by extension
+
+            // Show open file dialog box
+            Nullable<bool> result = dlg.ShowDialog();
+
+            // Process open file dialog box results
+            if (result == true)
+            {
+                // Open document
+                string filename = dlg.FileName;
+
+                ExcelFile ImportExcel = new ExcelFile(filename);
+
+                coordinates = ImportExcel.ToObservableCollection();
+                ImportExcel.Close();
+
+
+                XYDataGrid.ItemsSource = null;
+                XYDataGrid.ItemsSource = coordinates;
+                ChartCanvas_RedrawChart();
+            }
+        }
+
+        #endregion
+
+        #region Event/Button Handlers
+
+        private void RegressionButton_Click(object sender, RoutedEventArgs e)
+        {
+            DrawRegressionLine();
+            ChartCanvas_RedrawChart();
+        }
+
+        private void ExpRegressionButton_Click(object sender, RoutedEventArgs e)
+        {
+            DrawExpCurve();
+            ChartCanvas_RedrawChart();
+        }
+
+        private void ChartWindow_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            ChartCanvas_RedrawChart();
+        }
+
+        private void DomainClick(object sender, RoutedEventArgs e)
+        {
+            maxBoundsX = Convert.ToDouble(DomainMaxBox.Text);
+            minBoundsX = Convert.ToDouble(DomainMinBox.Text);
+            ChartCanvas_RedrawChart();
+        }
+
+        private void RangeClick(object sender, RoutedEventArgs e)
+        {
+            maxBoundsY = Convert.ToDouble(RangeMaxBox.Text);
+            minBoundsY = Convert.ToDouble(RangeMinBox.Text);
+            ChartCanvas_RedrawChart();
+        }
+
+        private void SwitchToExp(object sender, RoutedEventArgs e)
+        {
+            CurrentLine = Regression.Exp;
+            ChartCanvas_RedrawChart();
+        }
+
+        private void SwitchToStraight(object sender, RoutedEventArgs e)
+        {
+            CurrentLine = Regression.Straight;
+            ChartCanvas_RedrawChart();
+        }
+
+        #endregion
+
+        #region Dialogs
+
+        private void showGridBox()
+        {
+            // Instantiate the dialog box
+            GridDialog.GridDialogBox dlg = new GridDialog.GridDialogBox();
+
+            dlg.LinesOnX = minorLinesX - 1;
+            dlg.LinesOnY = minorLinesY - 1;
+
+            dlg.DomainMax = (int)maxBoundsX;
+            dlg.DomainMin = (int)minBoundsX;
+
+            dlg.RangeMax = (int)maxBoundsY;
+            dlg.RangeMin = (int)minBoundsY;
+
+            // Configure the dialog box
+            dlg.Owner = this;
+
+            
+
+            // Open the dialog box modally 
+            dlg.ShowDialog();
+
+            if (dlg.DialogResult == true)
+            {
+                // Update fonts
+                minorLinesX = (dlg.LinesOnX + 1);
+                minorLinesY = (dlg.LinesOnY + 1);
+
+                maxBoundsX = dlg.DomainMax;
+                minBoundsX = dlg.DomainMin;
+
+                maxBoundsY = dlg.RangeMax;
+                minBoundsY = dlg.RangeMin;
+
+
+                ChartCanvas_RedrawChart();
+            }
+        }
+
+        private void Properties_Click_Grid(object sender, RoutedEventArgs e)
+        {
+            showGridBox();
+        }
+
+        private void showLineBox()
+        {
+            // Instantiate the dialog box
+            LineDialog.LineDialogBox dlg = new LineDialog.LineDialogBox();
+
+            // Configure the dialog box
+            dlg.Owner = this;
+
+
+
+            // Open the dialog box modally 
+            dlg.ShowDialog();
+        }
+
+        private void Properties_Click_Line(object sender, RoutedEventArgs e)
+        {
+            showLineBox();
+        }
+
+
+
+
+        #endregion
+
+        private void AntiAliasButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ChartCanvas.SnapsToDevicePixels)
+            {
+                ChartCanvas.SnapsToDevicePixels = false;
+            }
+            else
+            {
+                ChartCanvas.SnapsToDevicePixels = true;
+            }
+            ChartCanvas_RedrawChart();
+
+        }
+
+        private void HalfLifeCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            HalfLivesOn = true;
+            ChartCanvas_RedrawChart();
+        }
+
+        private void HalfLifeCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            HalfLivesOn = false;
+            ChartCanvas_RedrawChart();
+        }
+    }
+
+    // This class acts as a reference type for the Point struct. 
+    // It is used in the data grid and then is converted to Point for use in the canvas.
+    public class CustomPoint
+    {
+        public double X { get; set; }
+        public double Y { get; set; }
+
+        // Converts CustomPoint to struct Point
+        public Point ToPoint()
+        {
+            Point TempPoint = new Point();
+
+            TempPoint.X = X;
+            TempPoint.Y = Y;
+
+            return TempPoint;
+        }
+    }
+
+    enum Regression
+    {
+        Straight, Exp, Log, Poly, Power, None
+    };
+}

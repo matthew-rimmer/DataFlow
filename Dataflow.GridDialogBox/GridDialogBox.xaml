@@ -1,0 +1,117 @@
+﻿<Window x:Class="DataFlow.GridProperties.GridDialogBox"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DataFlow.GridProperties"
+        mc:Ignorable="d"
+        Title="Grid Properties"
+    Height="236"
+    Width="270.667"
+    ResizeMode="NoResize"
+    ShowInTaskbar="False"
+    WindowStartupLocation="CenterOwner" 
+    FocusManager.FocusedElement="{Binding ElementName=leftMarginTextBox}">
+
+    <Grid>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="7*"/>
+            <RowDefinition Height="2*"/>
+        </Grid.RowDefinitions>
+
+
+        <!-- Accept or Cancel -->
+
+        <TabControl HorizontalAlignment="Left" Height="207" Margin="0" Grid.RowSpan="2" VerticalAlignment="Top" Width="265" Grid.ColumnSpan="2">
+            <TabItem Header="Interval">
+                <Grid Margin="0,0,0,59">
+
+
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Label Content="Minor Intervals on X" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Label Content="Minor Intervals on Y" HorizontalAlignment="Center" Grid.Row="1" VerticalAlignment="Center" />
+
+                    <Label Content="Major Intervals on X" HorizontalAlignment="Center" Grid.Row="2" VerticalAlignment="Center"/>
+                    <Label Content="Major Intervals on Y" HorizontalAlignment="Center" Grid.Row="3" VerticalAlignment="Center" />
+
+                    <TextBox x:Name="MinorIntervalsOnXBox" Text="0" Grid.Column="1" HorizontalAlignment="Center" Height="23" TextWrapping="Wrap" VerticalAlignment="Center" Width="83" Loaded="MinorIntervalsOnXBox_Loaded"/>
+                    <TextBox x:Name="MinorIntervalsOnYBox" Text="0" Grid.Column="1" HorizontalAlignment="Center" Height="23" TextWrapping="Wrap" VerticalAlignment="Center" Width="83" Grid.Row="1"/>
+                    <TextBox x:Name="MajorIntervalsOnXBox" Text="0" Grid.Column="1" HorizontalAlignment="Center" Height="23" TextWrapping="Wrap" VerticalAlignment="Center" Width="83" Grid.Row="2" />
+                    <TextBox x:Name="MajorIntervalsOnYBox" Text="0" Grid.Column="1" HorizontalAlignment="Center" Height="23" TextWrapping="Wrap" VerticalAlignment="Center" Width="83" Grid.Row="3"/>
+
+
+
+
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Bounds">
+                <Grid>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+
+                    </Grid.RowDefinitions>
+
+                    <Label Content="Domain:" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Column="1">
+                        <TextBox x:Name="DomainMinBox" Width="30" Height="23" Loaded="DomainMinBox_Loaded">
+                            -100
+                        </TextBox>
+                        <Label Content="&#8804; x &#8804;" Height="23"/>
+                        <TextBox x:Name="DomainMaxBox" Width="30" Height="23">
+                            100
+                        </TextBox>
+                    </StackPanel>
+                    
+                    
+                    <Label Content="Range:" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="1"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Column="1" Grid.Row="1">
+                        <TextBox x:Name="RangeMinBox" Width="30" Height="23">
+                            -100
+                        </TextBox>
+                        <Label Content="&#8804; y &#8804;" Height="23"/>
+                        <TextBox x:Name="RangeMaxBox" Width="30" Height="23">
+                            100
+                        </TextBox>
+                    </StackPanel>
+
+
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <Button Name="okButton" IsDefault="True" Grid.Column="0" Grid.Row="1" Height="20" Width="70" Click="okButton_Click">OK</Button>
+        <Button Name="cancelButton" IsCancel="True" Grid.Column="1" Grid.Row="1" Height="20" Width="70">Cancel</Button>
+
+    </Grid >
+
+
+
+</Window>
